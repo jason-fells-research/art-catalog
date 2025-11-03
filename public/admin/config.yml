@@ -1,0 +1,29 @@
+backend:
+  name: git-gateway
+  branch: main
+
+media_folder: "public/photos"
+public_folder: "/photos"
+
+publish_mode: simple
+
+collections:
+  - name: "artworks"
+    label: "Artworks"
+    folder: "content/artworks"
+    create: true
+    slug: "{{ref}}"
+    identifier_field: "ref"
+    editor:
+      preview: false
+    fields:
+      - { label: "Reference Code", name: "ref", widget: "string", hint: "e.g., REF001" }
+      - { label: "Title", name: "title", widget: "string", required: false }
+      - { label: "Artist", name: "artist", widget: "string", required: false }
+      - { label: "Year", name: "year", widget: "string", required: false }
+      - { label: "Medium", name: "medium", widget: "string", required: false }
+      - { label: "Dimensions", name: "dimensions", widget: "string", required: false }
+      - { label: "Estimated Value", name: "est_value", widget: "string", required: false, hint: "e.g., $10,000 - $60,000" }
+      - { label: "Photo Filename", name: "photo", widget: "string", required: false }
+      - { label: "Priority", name: "priority", widget: "number", default: 0, value_type: "int", min: 0, max: 100, required: false }
+      - { label: "Location / Provenance", name: "body", widget: "markdown", required: false, hint: "Where and when purchased, gallery details, etc." }
