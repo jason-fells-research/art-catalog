@@ -5,22 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Art Catalog — Family Collection</title>
   <link rel="stylesheet" href="/css/style.css">
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 </head>
 <body>
   <header>
     <h1>Art Catalog — Family Collection</h1>
     <p class="subtitle">Provenance and value documentation for estate planning</p>
-    <a href="/admin/" class="admin-link">📝 Edit Collection (Family Members)</a>
+    <div style="margin: 20px 0;">
+      <a href="#" id="editLink" class="admin-link" target="_blank" rel="noopener">✎ Edit Collection (no login)</a>
+      <p style="margin-top: 12px; font-size: 14px; color: #666;">
+        Edit in Google Sheets (no login). Changes auto-save. Refresh this page to see updates.<br>
+        If a document is missing, set Status = "unverified".
+      </p>
+    </div>
   </header>
 
   <div class="grid" id="gallery"></div>
 
   <div class="loading" id="loading">Loading collection...</div>
+  <p id="status" style="text-align: center; color: #666; font-size: 14px; margin: 20px 0;"></p>
 
   <footer>
     <p>© 2025 Prohaska Family Art Collection · Managed via ETHRAEON Systems</p>
-    <p style="margin-top: 8px; font-size: 12px;">For editing access, contact Jason at sjasonprohaska@gmail.com</p>
   </footer>
 
   <script src="/js/app.js"></script>

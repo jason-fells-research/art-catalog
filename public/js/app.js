@@ -1,95 +1,62 @@
-// Simple frontmatter parser
-function parseFrontmatter(text) {
-  const match = text.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
-  if (!match) return { data: {}, content: text };
+const SHEET_EDIT_URL = 'https://docs.google.com/spreadsheets/d/162jVgCuyf-OrtJppRu_41B2Uo12-cVay1UcDGdBX61A/edit?usp=sharing';
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSCY59zBM3QZLCwnJR77OTw-K-axvlR0SORL36xFuaeqVgvukdarPUs-U5MHsWr_7CLcBezFjJeIAaK/pub?output=csv';
 
-  const frontmatter = match[1];
-  const content = match[2];
+document.getElementById('editLink').href = SHEET_EDIT_URL;
 
-  const data = {};
-  frontmatter.split('\n').forEach(line => {
-    const colonIndex = line.indexOf(':');
-    if (colonIndex > 0) {
-      const key = line.substring(0, colonIndex).trim();
-      const value = line.substring(colonIndex + 1).trim();
-      data[key] = value;
-    }
-  });
+function renderRow(r) {
+  const img = r.image_url ? `<img src="${r.image_url}" alt="${r.title || ''}" style="width:100%;height:auto;border-radius:8px;">` : '';
+  const receipt = r.receipt_url ? `<div style="margin-top:6px;"><a href="${r.receipt_url}" target="_blank" rel="noopener">Receipt/Certificate</a></div>` : '';
+  const est = r.est_value ? `<div><strong>Est. Value:</strong> ${r.est_value}</div>` : '';
+  const prov = r.provenance ? `<div><strong>Provenance:</strong> ${r.provenance}</div>` : '';
+  const notes = r.notes ? `<div><strong>Notes:</strong> ${r.notes}</div>` : '';
+  const meta = [r.artist, r.year, r.medium, r.dimensions].filter(Boolean).join(' · ');
 
-  return { data, content };
+  return `
+    <div class="card">
+      ${img}
+      <div class="card-content">
+        <span class="ref ${r.status === 'verified' ? '' : 'priority'}">${r.ref || 'N/A'}</span>
+        <h3>${r.title || 'Untitled'}</h3>
+        ${r.artist ? `<div class="artist">${r.artist}</div>` : ''}
+        ${meta ? `<div class="meta">${meta}</div>` : ''}
+        ${est}${prov}${notes}
+        ${receipt}
+      </div>
+    </div>`;
 }
 
-// Load and display artworks
-async function loadGallery() {
-  try {
-    const response = await fetch('/artworks-manifest.json');
-    const manifest = await response.json();
+function fetchCSV(url) {
+  const bust = (url.includes('?') ? '&' : '?') + '_cb=' + Date.now();
+  return url + bust;
+}
 
-    const gallery = document.getElementById('gallery');
-    const loading = document.getElementById('loading');
+Papa.parse(fetchCSV(CSV_URL), {
+  download: true,
+  header: true,
+  skipEmptyLines: true,
+  complete: ({ data }) => {
+    const rows = data.map(r => ({
+      ref: r.ref || '',
+      title: r.title || '',
+      artist: r.artist || '',
+      year: r.year || '',
+      medium: r.medium || '',
+      dimensions: r.dimensions || '',
+      provenance: r.provenance || '',
+      receipt_url: r.receipt_url || '',
+      est_value: r.est_value || '',
+      notes: r.notes || '',
+      image_url: r.image_url || '',
+      status: r.status || 'unverified'
+    }));
 
-    // Load all artworks
-    const artworks = await Promise.all(
-      manifest.map(async (filename) => {
-        try {
-          const res = await fetch(`/content/artworks/${filename}`);
-          const text = await res.text();
-          const parsed = parseFrontmatter(text);
-          return { ...parsed.data, body: parsed.content, filename };
-        } catch (err) {
-          console.error(`Failed to load ${filename}:`, err);
-          return null;
-        }
-      })
-    );
-
-    // Filter out failures and sort
-    const validArtworks = artworks
-      .filter(a => a !== null)
-      .sort((a, b) => {
-        const aPrio = parseInt(a.priority) || 0;
-        const bPrio = parseInt(b.priority) || 0;
-        if (aPrio !== bPrio) return bPrio - aPrio;
-        return (a.ref || '').localeCompare(b.ref || '');
-      });
-
-    // Render cards
-    validArtworks.forEach(artwork => {
-      const card = document.createElement('div');
-      card.className = 'card';
-
-      const photoSrc = artwork.photo
-        ? `/photos/${artwork.photo}`
-        : '/photos/placeholder.jpg';
-
-      const isPriority = (parseInt(artwork.priority) || 0) > 50;
-
-      card.innerHTML = `
-        <img src="${photoSrc}"
-             alt="${artwork.title || 'Untitled'}"
-             onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22320%22%3E%3Crect fill=%22%23e5e5e5%22 width=%22400%22 height=%22320%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 fill=%22%23999%22 font-family=%22sans-serif%22 font-size=%2216%22%3ENo Image Available%3C/text%3E%3C/svg%3E'">
-        <div class="card-content">
-          <span class="ref ${isPriority ? 'priority' : ''}">${artwork.ref || 'N/A'}</span>
-          <h3>${artwork.title || 'Untitled'}</h3>
-          ${artwork.artist ? `<div class="artist">${artwork.artist}</div>` : ''}
-          ${artwork.year ? `<div class="meta"><strong>Year:</strong> ${artwork.year}</div>` : ''}
-          ${artwork.medium ? `<div class="meta"><strong>Medium:</strong> ${artwork.medium}</div>` : ''}
-          ${artwork.dimensions ? `<div class="meta"><strong>Dimensions:</strong> ${artwork.dimensions}</div>` : ''}
-          ${artwork.est_value ? `<div class="value">Estimated Value: ${artwork.est_value}</div>` : ''}
-          ${artwork.body ? `<div class="notes">${marked.parse(artwork.body)}</div>` : ''}
-        </div>
-      `;
-
-      gallery.appendChild(card);
-    });
-
-    loading.style.display = 'none';
-
-  } catch (err) {
-    console.error('Failed to load gallery:', err);
-    document.getElementById('loading').textContent = 'Failed to load collection. Please refresh.';
+    document.getElementById('gallery').innerHTML = rows.map(renderRow).join('');
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('status').textContent = `Loaded ${rows.length} items • edits apply instantly via Google Sheets`;
+  },
+  error: (err) => {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('status').textContent = 'Error loading catalog CSV.';
+    console.error(err);
   }
-}
-
-// Load on page ready
-loadGallery();
+});
