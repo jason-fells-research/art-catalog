@@ -1,6 +1,6 @@
 # art-catalog
 
-A family art collection catalogue with Netlify CMS.
+An art collection catalogue with Netlify CMS.
 
 ## Contents
 
@@ -8,7 +8,7 @@ A family art collection catalogue with Netlify CMS.
 
 ## Place in the estate
 
-It is S. Jason Prohaska's personal repository, outside the estate.
+It is S. Jason Prohaska's personal repository, outside the estate. It is public today. After the stop card its visibility changes to private.
 
 
 Copyright S. Jason Prohaska.
